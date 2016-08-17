@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -19,6 +21,8 @@ import android.widget.Toast;
 import com.freddieptf.meh.imagecompressor.services.CameraActionHandlerService;
 import com.freddieptf.meh.imagecompressor.services.CompressService;
 import com.freddieptf.meh.imagecompressor.views.EditResolutionView;
+
+import java.util.ArrayList;
 
 /**
  * Created by freddieptf on 18/07/16.
@@ -29,7 +33,9 @@ public class CompressPicActivity extends AppCompatActivity{
     TextView tvQuality, tvDetailText;
     EditResolutionView resolutionView;
     ProgressBar progressBar;
+    FrameLayout ivShareView;
     String[] picPaths;
+    ArrayList<Uri> shareFileUris;
     private int          outWidth      = -1;
     private int          outHeight     = -1;
     private int          targetWidth   = -1;
@@ -50,6 +56,7 @@ public class CompressPicActivity extends AppCompatActivity{
         tvQuality      = (TextView) findViewById(R.id.tv_quality);
         tvDetailText   = (TextView)findViewById(R.id.tv_detailText);
         progressBar    = (ProgressBar) findViewById(R.id.progress);
+        ivShareView    = (FrameLayout) findViewById(R.id.iv_share_button);
 
         if(savedInstanceState != null && savedInstanceState.containsKey(CameraActionHandlerService.PIC_PATH)){
             picPaths     = savedInstanceState.getStringArray(CameraActionHandlerService.PIC_PATH);
@@ -59,6 +66,7 @@ public class CompressPicActivity extends AppCompatActivity{
             targetHeight = savedInstanceState.getInt(TARGET_HEIGHT);
             resolutionView.setResolution(targetWidth, targetHeight);
             tvDetailText.setVisibility(savedInstanceState.getBoolean("dtv") ? View.VISIBLE : View.GONE);
+            ivShareView.setVisibility(savedInstanceState.getBoolean("ivs") ? View.VISIBLE : View.GONE);
         }else {
             init(getIntent());
         }
@@ -99,6 +107,7 @@ public class CompressPicActivity extends AppCompatActivity{
             outState.putInt(TARGET_HEIGHT, resolutionView.getResHeight());
         }
         outState.putBoolean("dtv", tvDetailText.getVisibility() == View.VISIBLE);
+        outState.putBoolean("ivs", ivShareView.getVisibility() == View.VISIBLE);
     }
 
     @Override
@@ -152,12 +161,24 @@ public class CompressPicActivity extends AppCompatActivity{
 
     }
 
+    public void shareImages(View view){
+        Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+        intent.setType("image/*");
+        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, shareFileUris);
+        startActivity(Intent.createChooser(intent, "Share Compressed Images to"));
+    }
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            shareFileUris = intent.getParcelableArrayListExtra("file_uris");
             progressBar.setIndeterminate(false);
             progressBar.setVisibility(View.GONE);
+            ivShareView.setAlpha(0f);
+            ivShareView.setTranslationX(15f);
+            ivShareView.setVisibility(View.VISIBLE);
+            ivShareView.animate().alpha(1f).start();
+            ivShareView.animate().translationX(0f).start();
             int i = intent.getIntExtra("num_pics", -1);
             Toast.makeText(context, "Success: " + i + " pics compressed!", Toast.LENGTH_LONG).show();
         }

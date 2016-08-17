@@ -3,6 +3,7 @@ package com.freddieptf.meh.imagecompressor.services;
 import android.app.IntentService;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,6 +14,7 @@ import com.github.hiteshsondhi88.libffmpeg.FFmpegExecuteResponseHandler;
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by freddieptf on 20/07/16.
@@ -53,15 +55,18 @@ public class CompressService extends IntentService {
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inSampleSize = sampleSize;
 
+                    ArrayList<Uri> uris = new ArrayList<>(paths.length);
                     for (String path : paths) {
-                        CompressUtils.compressPic(new File(path), options,
+                        Uri uri = CompressUtils.compressPic(new File(path), options,
                                 intent.getIntExtra(EXTRA_QUALITY, 0),
                                 intent.getIntExtra(EXTRA_WIDTH, 0),
                                 intent.getIntExtra(EXTRA_HEIGHT, 0));
+                        uris.add(uri);
                     }
 
                     Intent i = new Intent(PROGRESS_UPDATE);
                     i.putExtra("num_pics", paths.length);
+                    i.putParcelableArrayListExtra("file_uris", uris);
                     LocalBroadcastManager.getInstance(getBaseContext()).sendBroadcast(i);
                     break;
 
