@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="Quick Compress">
+
+        <SwitchPreference
+            android:summary="@string/quick_image_compress_summary"
+            android:title="@string/quick_image_compress_title"
+            android:key="@string/quick_image_compress_title"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

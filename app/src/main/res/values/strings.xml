@@ -9,6 +9,11 @@
     <string name="a_slower_preset_will_provide_better_compression_compression_is_quality_per_filesize_but_take_more_time">A slower preset will provide better compression (compression is quality per filesize) but take more time!</string>
     <string name="a_lower_value_is_a_higher_quality_and_a_subjectively_sane_range_is_18_28">A lower value is a higher quality and a subjectively sane range is 18-28.</string>
     <string name="image_compressor">Image Compressor</string>
+    <string name="settings">Settings</string>
+    <string name="quick_image_compress_summary">Allow the app to get notified by the system when you take a pic
+        so it can offer quick image compress options</string>
+    <string name="quick_image_compress_title">Image Compressor</string>
+    <string name="video_compressor_label">Video Compressor</string>
     <string-array name="formats">
         <item>mkv</item>
         <item>avi</item>

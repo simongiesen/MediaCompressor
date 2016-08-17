@@ -26,8 +26,11 @@
             android:excludeFromRecents="true"/>
 
         <activity android:name=".VideoActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            />
+            android:label="@string/video_compressor_label"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity android:name=".PrefsActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
 
         <service android:name=".services.CameraActionHandlerService"
             android:process=":compressService"/>
