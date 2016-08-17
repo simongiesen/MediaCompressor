@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Environment;
 
 import com.freddieptf.meh.imagecompressor.R;
@@ -23,8 +24,8 @@ import java.io.IOException;
 public class CompressUtils {
     private static final String TAG = "CompressUtils";
 
-    public static void compressPic(File picture, BitmapFactory.Options options, int quality,
-                                   int desWidth, int desHeight) {
+    public static Uri compressPic(File picture, BitmapFactory.Options options, int quality,
+                                  int desWidth, int desHeight) {
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(picture), null, options);
             bitmap = Bitmap.createScaledBitmap(bitmap, desWidth, desHeight, false);
@@ -32,14 +33,15 @@ public class CompressUtils {
             File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
                     + File.separator + "MediaCompress-uh" + File.separator + "Pictures");
             if (!file.exists()) file.mkdirs();
-            FileOutputStream outputStream = new FileOutputStream(file.getAbsolutePath()
-                    + File.separator + picture.getName());
+            String outPutPath = file.getAbsolutePath() + File.separator + picture.getName();
+            FileOutputStream outputStream = new FileOutputStream(outPutPath);
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             outputStream.close();
-            System.gc();
             bitmap.recycle();
+            return Uri.fromFile(new File(outPutPath));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
