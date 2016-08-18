@@ -1,11 +1,11 @@
-# Media Compressor/Resizer...*or whatever*
+# Media Compressor/Resizer...*or whatever* (WIP)
 
 [![CircleCI](https://circleci.com/gh/freddieptf/MediaCompressor.svg?style=svg)](https://circleci.com/gh/freddieptf/MediaCompressor)
 
-This is a little utility app that listens for the NEW_PICTURE system broadcast from the camera and pops up a notification to compress the picture taken on the fly. You can also just do this in app where you can actually pick multiple images.
+This is a little android app for picture and video compression. 
 
 #### Your phone's CPU wept
-It also supports *Video compression (really just scaling and format conversion) (**experimental**)* with [FFmpeg for android](https://github.com/WritingMinds/ffmpeg-android) built with the instructions [here](https://writingminds.github.io/ffmpeg-android/)
+It supports *Video compression (really just scaling and format conversion) (**experimental**)* with [FFmpeg for android](https://github.com/WritingMinds/ffmpeg-android) built with the instructions [here](https://writingminds.github.io/ffmpeg-android/)
 
 
 
