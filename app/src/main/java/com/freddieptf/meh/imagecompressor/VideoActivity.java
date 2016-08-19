@@ -172,18 +172,36 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     }
 
     public void onFabClick(View view){
-        if(taskViewScale.isChecked()){
-            CompressUtils.scaleVideo(this,
-                    videoDetails[VideoActivity.KEY_PATH],
-                    new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
-                    spinnerThreads.getSelectedItem().toString()
-            );
-            hideFab();
-        }else if (taskViewConvert.isChecked()){
+        //doesn't look so good...hardcoded convert to always go first...
+        if (taskViewConvert.isChecked()){
             String container = spinnerContainers.getSelectedItem().toString();
             String crf = String.valueOf(sbVideoQuality.getProgress() + 18); //plus 18 cause we're faking the start (zero) as 18
             String encodingPreset = CompressUtils.getEncodingPreset(radioGroup.getCheckedRadioButtonId());
-            CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], container, crf, encodingPreset);
+            if(taskViewScale.isChecked()){
+                Uri vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true, container, crf, encodingPreset);
+                CompressUtils.scaleVideo(this,
+                        vidUri.getPath(),
+                        new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
+                        spinnerThreads.getSelectedItem().toString()
+                );
+            }else {
+                CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], false, container, crf, encodingPreset);
+            }
+            hideFab();
+        }
+        else if(taskViewScale.isChecked()){
+            Uri vidUri = null;
+            if(taskViewConvert.isChecked()){
+                String container = spinnerContainers.getSelectedItem().toString();
+                String crf = String.valueOf(sbVideoQuality.getProgress() + 18); //plus 18 cause we're faking the start (zero) as 18
+                String encodingPreset = CompressUtils.getEncodingPreset(radioGroup.getCheckedRadioButtonId());
+                vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true, container, crf, encodingPreset);
+            }
+            CompressUtils.scaleVideo(this,
+                    vidUri == null ? videoDetails[KEY_PATH] : vidUri.getPath(),
+                    new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
+                    spinnerThreads.getSelectedItem().toString()
+            );
             hideFab();
         }else {
             Snackbar.make(view, "You need to select atleast one Task", Snackbar.LENGTH_SHORT).show();
@@ -192,21 +210,12 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
 
     @Override
     public void onTaskCheck(String tag) {
-//        Log.d(TAG, "onTaskCheck: " + taskView.getTag() + "/" + b);
-//        if(b) taskView.findViewById(R.id.taskBody).setVisibility(View.VISIBLE);
-//        else taskView.findViewById(R.id.taskBody).setVisibility(View.GONE);
-        switchTasks(tag);
+        toggleTasks(tag);
     }
 
-    public void switchTasks(String tag){
-        Log.d(TAG, taskViewScale.isChecked() + "/" + taskViewConvert.isChecked());
-        if(tag.equals("scale")) {
-            taskViewScale.toggle();
-            if(taskViewConvert.isChecked()) taskViewConvert.setChecked(false);
-        }else if(tag.equals("convert")){
-            taskViewConvert.toggle();
-            if(taskViewScale.isChecked()) taskViewScale.setChecked(false);
-        }
+    public void toggleTasks(String tag){
+        if(tag.equals("scale")) taskViewScale.toggle();
+        else if(tag.equals("convert")) taskViewConvert.toggle();
     }
 
     @Override
@@ -464,7 +473,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         public void onReceive(Context context, Intent intent) {
             if(intent.getBooleanExtra(CompressService.TASK_SUCCESS, false)) {
                 tvTaskStatus.setText("Tasks Completed!");
-                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
             }
 
             if(tasksStatusStringArray == null) {

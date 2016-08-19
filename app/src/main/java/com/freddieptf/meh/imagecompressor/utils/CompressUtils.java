@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Environment;
 
 import com.freddieptf.meh.imagecompressor.R;
 import com.freddieptf.meh.imagecompressor.services.CompressService;
@@ -29,11 +28,7 @@ public class CompressUtils {
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(picture), null, options);
             bitmap = Bitmap.createScaledBitmap(bitmap, desWidth, desHeight, false);
-
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                    + File.separator + "MediaCompress-uh" + File.separator + "Pictures");
-            if (!file.exists()) file.mkdirs();
-            String outPutPath = file.getAbsolutePath() + File.separator + picture.getName();
+            String outPutPath = FileUtils.getOutPutPicPath(picture.getName());
             FileOutputStream outputStream = new FileOutputStream(outPutPath);
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             outputStream.close();
@@ -71,32 +66,27 @@ public class CompressUtils {
         return scale;
     }
 
-    public static void scaleVideo(Context context, String path, int[] resolution, String threads) {
+    public static Uri scaleVideo(Context context, String path, int[] resolution, String threads) {
         File vidFile = new File(path);
         String res = getEvenRes(resolution[0], resolution[1]);
-        String filePath;
         String[] scaleCmd;
-
-        File outputFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                + File.separator + "MediaCompress-uh" + File.separator + "Videos");
-        if (!outputFile.exists()) outputFile.mkdirs();
-
-        filePath = outputFile.getAbsolutePath() + File.separator + vidFile.getName();
+        String outPutFilePath = FileUtils.getOutPutVideoPath(vidFile.getName());
         scaleCmd = new String[]{
                 "-i", path, //input
                 "-filter:v", "scale=" + res, //scale filter
                 "-threads", threads.isEmpty() ? (Runtime.getRuntime().availableProcessors() - 1) + "" : threads,
                 "-c:a", "copy", //just copy the audio, no re-encode
-                filePath //output file
+                outPutFilePath //output file
         };
 
-        vidFile = new File(filePath);
+        vidFile = new File(outPutFilePath);
         if (vidFile.exists()) vidFile.delete();
 
         Intent intent = new Intent(context, CompressService.class);
         intent.setAction(CompressService.ACTION_COMPRESS_VID);
         intent.putExtra(CompressService.EXTRA_VID_CMD, scaleCmd);
         context.startService(intent);
+        return Uri.fromFile(new File(outPutFilePath));
     }
 
     //cause we might get errors when we pass an odd size..dammit...something about libx264 \(>.\(>.<)/.<)/
@@ -107,15 +97,12 @@ public class CompressUtils {
         return w + ":" + h;
     }
 
-    public static void convertVideo(Context context, String path, String vidContainer, String crf, String encodingPreset) {
+    public static Uri convertVideo(Context context, String path, boolean temp, String vidContainer, String crf, String encodingPreset) {
         File file = new File(path);
         if(vidContainer == null) vidContainer = "mkv";
-
-        File outputFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
-                + File.separator + "MediaCompress-uh" + File.separator + "Videos");
-        if (!outputFile.exists()) outputFile.mkdirs();
-
-        String fileName = outputFile.getAbsolutePath() + File.separator + file.getName() + "." + vidContainer;
+        String outPutFilePath;
+        if(temp) outPutFilePath = FileUtils.getTempVideoPath(file.getName()) + "." + vidContainer;
+        else outPutFilePath = FileUtils.getOutPutVideoPath(file.getName()) + "." + vidContainer;
 
         String[] convertCmdx264 = new String[]{
                 "-i", path,
@@ -125,10 +112,10 @@ public class CompressUtils {
                 "-threads", String.valueOf(Runtime.getRuntime().availableProcessors()),
                 "-c:a", "copy",
                 "-profile:v", "baseline", "-level", "3.0",
-                fileName
+                outPutFilePath
         };
 
-        file = new File(fileName);
+        file = new File(outPutFilePath);
         if(file.exists()) file.delete();
 
 //        String[] convertCmdvp9 = new String[]{
@@ -141,6 +128,7 @@ public class CompressUtils {
         intent.setAction(CompressService.ACTION_COMPRESS_VID);
         intent.putExtra(CompressService.EXTRA_VID_CMD, convertCmdx264);
         context.startService(intent);
+        return Uri.fromFile(new File(outPutFilePath));
     }
 
     public static String getEncodingPreset(int id){
