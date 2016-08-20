@@ -1,8 +1,5 @@
 <resources>
     <string name="app_name">Media Compress-uh</string>
-    <string name="compressed_image_message">The compressed Image will be saved in the same directory
-        as the original image with \'compressed\' appended to the start of its name</string>
-    <string name="compress_image">Compress Image</string>
     <string name="compress_multiple_images_message">Since you\'re trying to resize and compress more than one image,
         It\'d be wise to make sure the selected images are at-least of the same size.
         The size below is extracted from the first image only and will be applied to all the selected images</string>

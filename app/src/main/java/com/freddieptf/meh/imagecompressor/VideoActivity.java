@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -22,16 +24,23 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -66,7 +75,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
 
     GetVidDetailsFromUri getVidDetails;
     TasksStatusAdapter tasksStatusAdapter;
-    ArrayList<String> tasksStatusStringArray;
+    ArrayList<CharSequence> tasksStatusStringArray;
 
     Spinner spinnerThreads, spinnerPresets, spinnerContainers;
     EditResolutionView resolutionView;
@@ -82,6 +91,8 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     View bottomSheet;
     BottomSheetBehavior bottomSheetBehavior;
     RecyclerView taskStatusRecycler;
+    ProgressBar progressBar;
+    TextView tvProgress;
 
     public static final int KEY_PATH       = 0;
     public static final int KEY_TITLE      = 1;
@@ -103,6 +114,8 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         bottomSheet       = coordinatorLayout.findViewById(R.id.bottomSheet);
         taskStatusRecycler= (RecyclerView) findViewById(R.id.recyclerTaskStatus);
         tvTaskStatus      = (TextView) findViewById(R.id.tv_taskStatus);
+        progressBar       = (ProgressBar) findViewById(R.id.pb_tasks);
+        tvProgress        = (TextView) findViewById(R.id.tv_progress);
 
         tvVideoName       = (TextView)  findViewById(R.id.tv_videoName);
         tvVideoDuration   = (TextView)  findViewById(R.id.tv_videoDuration);
@@ -163,11 +176,17 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
                 getVidDetails = new GetVidDetailsFromUri(Uri.parse(getIntent().getStringExtra(CameraActionHandlerService.MEDIA_URI)));
             }
 
-            if(tasksStatusAdapter != null) tasksStatusAdapter.restoreState(savedInstanceState);
             resolutionView.restoreState(savedInstanceState);
+            tasksStatusAdapter.restoreState(savedInstanceState);
+            progressBar.setVisibility(savedInstanceState.getBoolean("pb") ? View.VISIBLE : View.GONE);
+            fab.setVisibility(savedInstanceState.getBoolean("fabv") ? View.VISIBLE : View.GONE);
+            tvProgress.setText(savedInstanceState.getCharSequence("tvpg"));
+            tvTaskStatus.setText(savedInstanceState.getCharSequence("tvs"));
         } else {
             initFfmpeg();
             getVidDetails = new GetVidDetailsFromUri(Uri.parse(getIntent().getStringExtra(CameraActionHandlerService.MEDIA_URI)));
+            fab.setScaleX(0);
+            fab.setScaleY(0);
         }
     }
 
@@ -178,14 +197,17 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             String crf = String.valueOf(sbVideoQuality.getProgress() + 18); //plus 18 cause we're faking the start (zero) as 18
             String encodingPreset = CompressUtils.getEncodingPreset(radioGroup.getCheckedRadioButtonId());
             if(taskViewScale.isChecked()){
-                Uri vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true, container, crf, encodingPreset);
+                Uri vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true,
+                        container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
                 CompressUtils.scaleVideo(this,
                         vidUri.getPath(),
                         new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
-                        spinnerThreads.getSelectedItem().toString()
+                        spinnerThreads.getSelectedItem().toString(),
+                        Long.parseLong(videoDetails[KEY_DURATION])
                 );
             }else {
-                CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], false, container, crf, encodingPreset);
+                CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], false,
+                        container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
             }
             hideFab();
         }
@@ -195,12 +217,14 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
                 String container = spinnerContainers.getSelectedItem().toString();
                 String crf = String.valueOf(sbVideoQuality.getProgress() + 18); //plus 18 cause we're faking the start (zero) as 18
                 String encodingPreset = CompressUtils.getEncodingPreset(radioGroup.getCheckedRadioButtonId());
-                vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true, container, crf, encodingPreset);
+                vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true,
+                        container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
             }
             CompressUtils.scaleVideo(this,
                     vidUri == null ? videoDetails[KEY_PATH] : vidUri.getPath(),
                     new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
-                    spinnerThreads.getSelectedItem().toString()
+                    spinnerThreads.getSelectedItem().toString(),
+                    Long.parseLong(videoDetails[KEY_DURATION])
             );
             hideFab();
         }else {
@@ -225,8 +249,12 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         if(videoDetails != null && videoDetails.length > 0) outState.putStringArray(VID_DETS, videoDetails);
         if(presets != null) outState.putStringArray("presets", presets);
         if(threads != null) outState.putStringArray("threads", threads);
-        if(tasksStatusAdapter != null) tasksStatusAdapter.saveState(outState);
         resolutionView.saveState(outState);
+        tasksStatusAdapter.saveState(outState);
+        outState.putBoolean("pb", progressBar.getVisibility() == View.VISIBLE);
+        outState.putBoolean("fabv", fab.getVisibility() == View.VISIBLE);
+        outState.putCharSequence("tvpg", tvProgress.getText());
+        outState.putCharSequence("tvs", tvTaskStatus.getText());
     }
 
     @Override
@@ -347,6 +375,16 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         tvVideoSize.setText(Long.parseLong(videoDetails[KEY_SIZE]) / 1024000 + "mb");
         initTaskScale();
         initTaskConvert();
+        tasksStatusAdapter = new TasksStatusAdapter();
+        taskStatusRecycler.setAdapter(tasksStatusAdapter);
+        if(progressBar.getVisibility() == View.VISIBLE) {
+            progressBar.post(new Runnable() {
+                @Override
+                public void run() {
+                    tvProgress.setTranslationX(-progressBar.getWidth());
+                }
+            });
+        }
     }
 
     private void animateToolBar(){
@@ -383,6 +421,8 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
                     v.animate().translationY(0)
                             .setStartDelay(100 * i)
                             .setInterpolator(new DecelerateInterpolator(1.5f)).start();
+                    fab.animate().scaleX(1f).scaleY(1f).setStartDelay(300)
+                            .setInterpolator(new OvershootInterpolator()).start();
                 }
             }
 
@@ -401,7 +441,27 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     }
 
     private void hideFab(){
-       fab.setVisibility(View.GONE);
+        fab.animate().scaleX(0f).scaleY(0f).setListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                fab.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
     }
 
     private void initTaskScale(){
@@ -471,46 +531,122 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getBooleanExtra(CompressService.TASK_SUCCESS, false)) {
+            if (intent.getBooleanExtra(CompressService.TASK_SUCCESS, false)) {
                 tvTaskStatus.setText("Tasks Completed!");
-
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             }
 
-            if(tasksStatusStringArray == null) {
+            if (intent.hasExtra(CompressService.CURRENT_PROGRESS)) {
+                if (progressBar.getVisibility() == View.VISIBLE) {
+                    progressBar.animate().translationX(progressBar.getMeasuredHeight()).start();
+                    progressBar.animate().alpha(0f).setListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animator) {
+                            progressBar.setVisibility(View.INVISIBLE);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animator) {
+
+                        }
+                    });
+                    tvProgress.animate().translationX(0).setListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animator) {
+                            if (bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED)
+                                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animator) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animator) {
+
+                        }
+                    }).start();
+                }
+                int i = intent.getIntExtra(CompressService.CURRENT_PROGRESS, -1);
+                if(i != -1) tvProgress.setText(i + "%");
+            }
+
+            if (tasksStatusStringArray == null) {
                 tvTaskStatus.setText("Processing Video...");
-                if(bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED)
-                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                tasksStatusStringArray = new ArrayList<>(24);
-                tasksStatusStringArray.add(intent.getStringExtra(CompressService.PROGRESS_UPDATE));
-            }else{
-                if(tasksStatusStringArray.size() == 24) tasksStatusStringArray.remove(0);
-                tasksStatusStringArray.add(intent.getStringExtra(CompressService.PROGRESS_UPDATE));
+                if(tvProgress.getText() != null && !tvProgress.getText().toString().isEmpty()) tvProgress.setText("0%");
+                if (bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED)
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                tasksStatusStringArray = new ArrayList<>(30);
+            } else {
+                if (tasksStatusStringArray.size() == 30) tasksStatusStringArray.remove(0);
             }
 
-            if(tasksStatusAdapter == null){
-                tasksStatusAdapter = new TasksStatusAdapter();
-                tasksStatusAdapter.swapData(tasksStatusStringArray);
-                taskStatusRecycler.setAdapter(tasksStatusAdapter);
-            }else tasksStatusAdapter.swapData(tasksStatusStringArray);
+            if (intent.hasExtra(CompressService.PROGRESS_UPDATE)) {
+                String s = intent.getStringExtra(CompressService.PROGRESS_UPDATE);
+                if (s.startsWith("frame") || s.startsWith("video")) tasksStatusStringArray.add(colorOutPut(s));
+            }
+
+            tasksStatusAdapter.swapData(tasksStatusStringArray);
             taskStatusRecycler.scrollToPosition(tasksStatusStringArray.size() - 1);
         }
     };
 
+    //lets make the output pretty for no reason..
+    private CharSequence colorOutPut(String s){
+        String[] parts = s.replaceAll("=\\s+", "=").split(" ");
+        int[] colors = new int[]{
+                Color.rgb(181, 137, 0), //yellow
+                Color.rgb(38, 139, 210), //blue
+                Color.rgb(203, 75, 22), //...?
+                Color.rgb(42, 161, 152), //cyan
+                Color.rgb(220, 50, 47), //red
+                Color.rgb(211, 54, 130), //magenta
+                Color.rgb(133, 153, 0) //green
+        };
+        CharSequence charSequence = "";
+        for(int i = 0; i < colors.length; i++){
+            SpannableStringBuilder sb = new SpannableStringBuilder(parts[i]);
+            sb.setSpan(new ForegroundColorSpan(colors[i]), 0, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if(parts[i].startsWith("size") || parts[i].startsWith("time"))
+                sb.setSpan(new StyleSpan(Typeface.BOLD), 0, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            charSequence = TextUtils.concat(charSequence, sb, " ");
+        }
+        return charSequence;
+    }
+
     private class TasksStatusAdapter extends RecyclerView.Adapter<TaskStatusViewHolder>  {
 
-        ArrayList<String> stringList;
-        public void swapData(ArrayList<String> stringList){
+        ArrayList<CharSequence> stringList;
+        public void swapData(ArrayList<CharSequence> stringList){
             this.stringList = stringList;
             notifyDataSetChanged();
         }
 
         public void saveState(Bundle outState){
-            outState.putStringArrayList("sk", stringList);
+            if(stringList != null && stringList.size() > 0) outState.putCharSequenceArrayList("sk", stringList);
         }
 
         public void restoreState(Bundle savedInstanceState){
-            if(savedInstanceState.containsKey("sk")) stringList = savedInstanceState.getStringArrayList("sk");
-            notifyDataSetChanged();
+            if(savedInstanceState.containsKey("sk")) {
+                stringList = savedInstanceState.getCharSequenceArrayList("sk");
+                notifyDataSetChanged();
+            }
         }
 
         @Override
@@ -529,7 +665,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         public int getItemCount() {
             return stringList == null ? 0 : stringList.size();
         }
-    };
+    }
 
     private class TaskStatusViewHolder extends RecyclerView.ViewHolder {
         TextView status;

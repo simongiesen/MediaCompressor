@@ -66,7 +66,7 @@ public class CompressUtils {
         return scale;
     }
 
-    public static Uri scaleVideo(Context context, String path, int[] resolution, String threads) {
+    public static Uri scaleVideo(Context context, String path, int[] resolution, String threads, long videoDuration) {
         File vidFile = new File(path);
         String res = getEvenRes(resolution[0], resolution[1]);
         String[] scaleCmd;
@@ -85,6 +85,7 @@ public class CompressUtils {
         Intent intent = new Intent(context, CompressService.class);
         intent.setAction(CompressService.ACTION_COMPRESS_VID);
         intent.putExtra(CompressService.EXTRA_VID_CMD, scaleCmd);
+        intent.putExtra(CompressService.VIDEO_DURATION, videoDuration);
         context.startService(intent);
         return Uri.fromFile(new File(outPutFilePath));
     }
@@ -97,7 +98,7 @@ public class CompressUtils {
         return w + ":" + h;
     }
 
-    public static Uri convertVideo(Context context, String path, boolean temp, String vidContainer, String crf, String encodingPreset) {
+    public static Uri convertVideo(Context context, String path, boolean temp, String vidContainer, String crf, String encodingPreset, long videoDuration) {
         File file = new File(path);
         if(vidContainer == null) vidContainer = "mkv";
         String outPutFilePath;
@@ -127,6 +128,7 @@ public class CompressUtils {
         Intent intent = new Intent(context, CompressService.class);
         intent.setAction(CompressService.ACTION_COMPRESS_VID);
         intent.putExtra(CompressService.EXTRA_VID_CMD, convertCmdx264);
+        intent.putExtra(CompressService.VIDEO_DURATION, videoDuration);
         context.startService(intent);
         return Uri.fromFile(new File(outPutFilePath));
     }
