@@ -49,7 +49,7 @@ public class CompressPicActivity extends AppCompatActivity{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_activity);
+        setContentView(R.layout.activity_compress_pic_dialog);
 
         resolutionView = (EditResolutionView) findViewById(R.id.editResolution);
         seekBar        = (SeekBar) findViewById(R.id.seekbar_quality);
