@@ -70,8 +70,21 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     String[] presets;
     String[] threads;
     Bitmap t;
-    public static final  String VID_DETS = "vid_dets";
-    private static final String TAG      = "CompressVidActivity";
+    public static final String VID_DETS = "vid_dets";
+    private static final String TAG = "CompressVidActivity";
+    public static final int KEY_PATH = 0;
+    public static final int KEY_TITLE = 1;
+    public static final int KEY_DURATION = 2;
+    public static final int KEY_ROTATION = 3;
+    public static final int KEY_RESOLUTION = 4;
+    public static final int KEY_MIMETYPE = 5;
+    public static final int KEY_SIZE = 6;
+    private final String PROGRESS_BAR_VISIBILTY = "progress_bar_visibilty";
+    private final String FAB_VISIBILTY = "fab_visibilty";
+    private final String PROGRESS_TEXT = "progress_text";
+    private final String TASK_STATUS = "task_status";
+    private final String RESOLUTION_PRESETS = "resolution_presets";
+    private final String PROCESSOR_THREADS = "processor_threads";
 
     GetVidDetailsFromUri getVidDetails;
     TasksStatusAdapter tasksStatusAdapter;
@@ -94,46 +107,38 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     ProgressBar progressBar;
     TextView tvProgress;
 
-    public static final int KEY_PATH       = 0;
-    public static final int KEY_TITLE      = 1;
-    public static final int KEY_DURATION   = 2;
-    public static final int KEY_ROTATION   = 3;
-    public static final int KEY_RESOLUTION = 4;
-    public static final int KEY_MIMETYPE   = 5;
-    public static final int KEY_SIZE       = 6;
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video);
 
-        toolbar           = (Toolbar) findViewById(R.id.toolbar);
-        taskParent        = (LinearLayout) findViewById(R.id.parent);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        taskParent = (LinearLayout) findViewById(R.id.parent);
         coordinatorLayout = (CoordinatorLayout) findViewById(R.id.content);
 
-        bottomSheet       = coordinatorLayout.findViewById(R.id.bottomSheet);
-        taskStatusRecycler= (RecyclerView) findViewById(R.id.recyclerTaskStatus);
-        tvTaskStatus      = (TextView) findViewById(R.id.tv_taskStatus);
-        progressBar       = (ProgressBar) findViewById(R.id.pb_tasks);
-        tvProgress        = (TextView) findViewById(R.id.tv_progress);
+        bottomSheet = coordinatorLayout.findViewById(R.id.bottomSheet);
+        taskStatusRecycler = (RecyclerView) findViewById(R.id.recyclerTaskStatus);
+        tvTaskStatus = (TextView) findViewById(R.id.tv_taskStatus);
+        progressBar = (ProgressBar) findViewById(R.id.pb_tasks);
+        tvProgress = (TextView) findViewById(R.id.tv_progress);
 
-        tvVideoName       = (TextView)  findViewById(R.id.tv_videoName);
-        tvVideoDuration   = (TextView)  findViewById(R.id.tv_videoDuration);
-        tvVideoResolution = (TextView)  findViewById(R.id.tv_videoResolution);
-        tvVideoSize       = (TextView)  findViewById(R.id.tv_videoSize);
-        ivThumbnail       = (ImageView) findViewById(R.id.iv_thumbnail);
-        fab               = (FloatingActionButton) findViewById(R.id.fab);
+        tvVideoName = (TextView) findViewById(R.id.tv_videoName);
+        tvVideoDuration = (TextView) findViewById(R.id.tv_videoDuration);
+        tvVideoResolution = (TextView) findViewById(R.id.tv_videoResolution);
+        tvVideoSize = (TextView) findViewById(R.id.tv_videoSize);
+        ivThumbnail = (ImageView) findViewById(R.id.iv_thumbnail);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
 
-        taskViewScale     = (TaskView) findViewById(R.id.taskViewScale);
-        spinnerThreads    = (Spinner)  findViewById(R.id.spinnerThreads);
-        spinnerPresets    = (Spinner)  findViewById(R.id.spinnerPresets);
-        resolutionView    = (EditResolutionView) findViewById(R.id.et_videoResolution);
+        taskViewScale = (TaskView) findViewById(R.id.taskViewScale);
+        spinnerThreads = (Spinner) findViewById(R.id.spinnerThreads);
+        spinnerPresets = (Spinner) findViewById(R.id.spinnerPresets);
+        resolutionView = (EditResolutionView) findViewById(R.id.et_videoResolution);
 
-        taskViewConvert   = (TaskView) findViewById(R.id.taskViewConvert);
-        spinnerContainers = (Spinner)  findViewById(R.id.spinner);
-        tvVideoQuality    = (TextView) findViewById(R.id.tv_quality);
-        sbVideoQuality    = (SeekBar)  findViewById(R.id.sk_vidQuality);
-        radioGroup        = (RadioGroup) findViewById(R.id.rgButtons);
+        taskViewConvert = (TaskView) findViewById(R.id.taskViewConvert);
+        spinnerContainers = (Spinner) findViewById(R.id.spinner);
+        tvVideoQuality = (TextView) findViewById(R.id.tv_quality);
+        sbVideoQuality = (SeekBar) findViewById(R.id.sk_vidQuality);
+        radioGroup = (RadioGroup) findViewById(R.id.rgButtons);
 
         restoreState(savedInstanceState);
         if (getVidDetails != null) getVidDetails.execute();
@@ -165,8 +170,8 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
                 ffmpegEnabled = savedInstanceState.getBoolean("ff");
             else initFfmpeg();
 
-            if(savedInstanceState.containsKey("presets")) presets = savedInstanceState.getStringArray("presets");
-            if(savedInstanceState.containsKey("threads")) threads = savedInstanceState.getStringArray("threads");
+            if(savedInstanceState.containsKey(RESOLUTION_PRESETS)) presets = savedInstanceState.getStringArray(RESOLUTION_PRESETS);
+            if(savedInstanceState.containsKey(PROCESSOR_THREADS)) threads = savedInstanceState.getStringArray(PROCESSOR_THREADS);
 
             if (savedInstanceState.containsKey(VID_DETS)) {
                 videoDetails = savedInstanceState.getStringArray(VID_DETS);
@@ -178,10 +183,10 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
 
             resolutionView.restoreState(savedInstanceState);
             tasksStatusAdapter.restoreState(savedInstanceState);
-            progressBar.setVisibility(savedInstanceState.getBoolean("pb") ? View.VISIBLE : View.GONE);
-            fab.setVisibility(savedInstanceState.getBoolean("fabv") ? View.VISIBLE : View.GONE);
-            tvProgress.setText(savedInstanceState.getCharSequence("tvpg"));
-            tvTaskStatus.setText(savedInstanceState.getCharSequence("tvs"));
+            progressBar.setVisibility(savedInstanceState.getBoolean(PROGRESS_BAR_VISIBILTY) ? View.VISIBLE : View.GONE);
+            fab.setVisibility(savedInstanceState.getBoolean(FAB_VISIBILTY) ? View.VISIBLE : View.GONE);
+            tvProgress.setText(savedInstanceState.getCharSequence(PROGRESS_TEXT));
+            tvTaskStatus.setText(savedInstanceState.getCharSequence(TASK_STATUS));
         } else {
             initFfmpeg();
             getVidDetails = new GetVidDetailsFromUri(Uri.parse(getIntent().getStringExtra(CameraActionHandlerService.MEDIA_URI)));
@@ -196,18 +201,19 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             String container = spinnerContainers.getSelectedItem().toString();
             String crf = String.valueOf(sbVideoQuality.getProgress() + 18); //plus 18 cause we're faking the start (zero) as 18
             String encodingPreset = CompressUtils.getEncodingPreset(radioGroup.getCheckedRadioButtonId());
-            if(taskViewScale.isChecked()){
-                Uri vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], true,
-                        container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
+            //if true the result of the conversion will be saved in a temp dir
+            boolean isTaskScaleChecked = taskViewScale.isChecked();
+
+            Uri vidUri = CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], isTaskScaleChecked,
+                    container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
+
+            if(isTaskScaleChecked){ // if true, we'll use the file in the temp dir as the input for scaling
                 CompressUtils.scaleVideo(this,
                         vidUri.getPath(),
                         new int[]{resolutionView.getResWidth(), resolutionView.getResHeight()},
                         spinnerThreads.getSelectedItem().toString(),
                         Long.parseLong(videoDetails[KEY_DURATION])
                 );
-            }else {
-                CompressUtils.convertVideo(this, videoDetails[VideoActivity.KEY_PATH], false,
-                        container, crf, encodingPreset, Long.parseLong(videoDetails[KEY_DURATION]));
             }
             hideFab();
         }
@@ -247,14 +253,14 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         super.onSaveInstanceState(outState);
         outState.putBoolean("ff", ffmpegEnabled);
         if(videoDetails != null && videoDetails.length > 0) outState.putStringArray(VID_DETS, videoDetails);
-        if(presets != null) outState.putStringArray("presets", presets);
-        if(threads != null) outState.putStringArray("threads", threads);
+        if(presets != null) outState.putStringArray(RESOLUTION_PRESETS, presets);
+        if(threads != null) outState.putStringArray(PROCESSOR_THREADS, threads);
         resolutionView.saveState(outState);
         tasksStatusAdapter.saveState(outState);
-        outState.putBoolean("pb", progressBar.getVisibility() == View.VISIBLE);
-        outState.putBoolean("fabv", fab.getVisibility() == View.VISIBLE);
-        outState.putCharSequence("tvpg", tvProgress.getText());
-        outState.putCharSequence("tvs", tvTaskStatus.getText());
+        outState.putBoolean(PROGRESS_BAR_VISIBILTY, progressBar.getVisibility() == View.VISIBLE);
+        outState.putBoolean(FAB_VISIBILTY, fab.getVisibility() == View.VISIBLE);
+        outState.putCharSequence(PROGRESS_TEXT, tvProgress.getText());
+        outState.putCharSequence(TASK_STATUS, tvTaskStatus.getText());
     }
 
     @Override
@@ -319,10 +325,10 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            taskParent.setAlpha(0f);
             for(int i = 0; i < taskParent.getChildCount(); i++){
                 View v = taskParent.getChildAt(i);
-                v.setTranslationY(i == 0 ? 70 : 100*i);
+                v.setAlpha(0f);
+                v.setTranslationY(i == 0 ? 50 : 80 * i);
             }
         }
 
@@ -415,11 +421,11 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
 
             @Override
             public void onAnimationEnd(Animator animator) {
-                taskParent.animate().alpha(1f).start();
                 for(int i = 0; i < taskParent.getChildCount(); i++){
                     View v = taskParent.getChildAt(i);
+                    v.animate().alpha(1f).setDuration(500).start();
                     v.animate().translationY(0)
-                            .setStartDelay(100 * i)
+                            .setStartDelay(i == 0 ? 75 : 120 * i)
                             .setInterpolator(new DecelerateInterpolator(1.5f)).start();
                     fab.animate().scaleX(1f).scaleY(1f).setStartDelay(300)
                             .setInterpolator(new OvershootInterpolator()).start();
