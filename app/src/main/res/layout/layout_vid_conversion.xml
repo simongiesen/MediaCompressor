@@ -35,7 +35,8 @@
         android:layout_height="wrap_content"
         android:paddingTop="8dp"
         android:text="@string/a_slower_preset_will_provide_better_compression_compression_is_quality_per_filesize_but_take_more_time"
-        android:textStyle="italic" />
+        android:textStyle="italic"
+        style="@style/TextAppearance.AppCompat.Small"/>
 
     <RadioGroup
         android:id="@+id/rgButtons"
@@ -90,7 +91,8 @@
         android:layout_height="wrap_content"
         android:paddingTop="8dp"
         android:text="@string/a_lower_value_is_a_higher_quality_and_a_subjectively_sane_range_is_18_28"
-        android:textStyle="italic" />
+        android:textStyle="italic"
+        style="@style/TextAppearance.AppCompat.Small"/>
 
     <TableRow
         android:layout_width="match_parent"
