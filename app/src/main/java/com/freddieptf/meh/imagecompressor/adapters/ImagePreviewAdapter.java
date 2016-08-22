@@ -1,6 +1,5 @@
 package com.freddieptf.meh.imagecompressor.adapters;
 
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -8,8 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.freddieptf.meh.imagecompressor.utils.CompressUtils;
-import com.freddieptf.meh.imagecompressor.utils.ImageCache;
+import com.bumptech.glide.Glide;
 import com.freddieptf.meh.imagecompressor.R;
 
 import java.util.ArrayList;
@@ -58,13 +56,12 @@ public class ImagePreviewAdapter extends RecyclerView.Adapter<ImagePreviewAdapte
         if(selected.contains(position)) holder.itemView.setSelected(true);
         else holder.itemView.setSelected(false);
 
-        Bitmap bitmap;
-        if(ImageCache.getInstance().getBitmapFromCache(picPaths[position]) == null){
-            bitmap = CompressUtils.scaleImageForPreview(picPaths[position], 100);
-            ImageCache.getInstance().addBitmapToCache(picPaths[position], bitmap);
-        }else bitmap = ImageCache.getInstance().getBitmapFromCache(picPaths[position]);
+        Glide.with(holder.itemView.getContext())
+                .load(picPaths[position])
+                .sizeMultiplier(0.7f)
+                .crossFade()
+                .into(holder.previewImage);
 
-        holder.previewImage.setImageBitmap(bitmap);
         holder.itemView.setTag(position);
         holder.itemView.setOnClickListener(this);
     }
@@ -84,7 +81,7 @@ public class ImagePreviewAdapter extends RecyclerView.Adapter<ImagePreviewAdapte
                 v.setSelected(false);
                 selected.remove(v.getTag());
             }
-            onImageClick.onImageClick(picPaths[(int) v.getTag()], getSelected().size());
+            onImageClick.onImageClick(getSelected().size());
         }
     }
 
@@ -112,7 +109,7 @@ public class ImagePreviewAdapter extends RecyclerView.Adapter<ImagePreviewAdapte
     }
 
     public interface ImageClickListener {
-        void onImageClick(String picPath, int totalSelected);
+        void onImageClick(int totalSelected);
     }
 
 }
