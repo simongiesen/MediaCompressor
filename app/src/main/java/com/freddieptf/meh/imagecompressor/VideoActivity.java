@@ -69,7 +69,6 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
     String[] videoDetails;
     String[] presets;
     String[] threads;
-    Bitmap t;
     public static final String VID_DETS = "vid_dets";
     private static final String TAG = "CompressVidActivity";
     public static final int KEY_PATH = 0;
@@ -354,15 +353,13 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             Thread loadThumbnail = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    t = ThumbnailUtils.createVideoThumbnail(videoDetails[KEY_PATH],
+                    final Bitmap toolbarBackDrop = ThumbnailUtils.createVideoThumbnail(videoDetails[KEY_PATH],
                             MediaStore.Video.Thumbnails.MINI_KIND);
-                    t = Bitmap.createBitmap(t, 0, 0, t.getWidth(), t.getHeight()/2);
-                    t = Bitmap.createScaledBitmap(t, t.getWidth()*2, t.getHeight()*2, true);
-                    ImageCache.getInstance().addBitmapToCache(videoDetails[KEY_PATH], t);
+                    ImageCache.getInstance().addBitmapToCache(videoDetails[KEY_PATH], toolbarBackDrop);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            ivThumbnail.setImageBitmap(t);
+                            ivThumbnail.setImageBitmap(toolbarBackDrop);
                             ivThumbnail.animate().alpha(1f).setDuration(600).start();
                         }
                     });
