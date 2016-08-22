@@ -46,6 +46,6 @@ android {
         compile(name: 'arm-release', ext:'aar')
     }
 
-    apply plugin: 'com.google.gms.google-services'
+//    apply plugin: 'com.google.gms.google-services'
 
 }
