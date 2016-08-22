@@ -39,20 +39,11 @@
 
     </TableRow>
 
-    <android.support.v7.widget.RecyclerView
+    <com.freddieptf.meh.imagecompressor.views.AutoFitRecyclerView
         android:id="@+id/previewRecycler"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <TextView
-        android:id="@+id/tv_filePath"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/tv_fileSize"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent"
+        android:columnWidth="@dimen/column_width"/>
 
     <Button
         android:id="@+id/btnCompress"
@@ -61,11 +52,5 @@
         android:visibility="gone"
         android:text="compress"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="serif-monospace"
-        android:layout_gravity="bottom|center"
-        android:text="ImageCompressor v1.0"/>
 
 </LinearLayout>

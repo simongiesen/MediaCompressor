@@ -8,18 +8,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 import com.freddieptf.meh.imagecompressor.adapters.ImagePreviewAdapter;
 import com.freddieptf.meh.imagecompressor.services.CameraActionHandlerService;
 import com.freddieptf.meh.imagecompressor.utils.MediaUtils;
+import com.freddieptf.meh.imagecompressor.views.AutoFitRecyclerView;
 
 import java.util.ArrayList;
 
@@ -31,9 +29,8 @@ public class MainActivity extends AppCompatActivity {
     final int STORAGE_PERMISION_REQUEST_VID = 102;
     private static final String TAG = "MainActivity";
     Button btnCompress, btnChoosePic, btnChooseVid;
-    TextView fileSize, filePath;
     String[] picturePaths;
-    RecyclerView recyclerView;
+    AutoFitRecyclerView recyclerView;
     ImagePreviewAdapter previewAdapter;
 
     @Override
@@ -44,16 +41,13 @@ public class MainActivity extends AppCompatActivity {
         btnChoosePic = (Button) findViewById(R.id.btnChooser);
         btnCompress  = (Button) findViewById(R.id.btnCompress);
         btnChooseVid = (Button) findViewById(R.id.btnVidActivity);
-        filePath     = (TextView) findViewById(R.id.tv_filePath);
-        fileSize     = (TextView) findViewById(R.id.tv_fileSize);
-        recyclerView = (RecyclerView) findViewById(R.id.previewRecycler);
+        recyclerView = (AutoFitRecyclerView) findViewById(R.id.previewRecycler);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setHasFixedSize(true);
         previewAdapter = new ImagePreviewAdapter();
         previewAdapter.setClickListener(new ImagePreviewAdapter.ImageClickListener() {
             @Override
-            public void onImageClick(String picPath, int ts) {
+            public void onImageClick(int ts) {
                 btnCompress.setEnabled(ts > 0);
             }
         });

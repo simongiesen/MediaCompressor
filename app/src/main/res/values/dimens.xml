@@ -3,4 +3,5 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="min_task_height">64dp</dimen>
     <dimen name="expanded_toolbar">148dp</dimen>
+    <dimen name="column_width">112dp</dimen>
 </resources>
