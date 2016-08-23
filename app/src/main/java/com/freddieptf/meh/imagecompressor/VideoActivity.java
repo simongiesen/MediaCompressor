@@ -1,6 +1,7 @@
 package com.freddieptf.meh.imagecompressor;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -64,7 +65,7 @@ import java.util.concurrent.TimeUnit;
  * Created by freddieptf on 20/07/16.
  */
 public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskCheck{
-
+    //@ToDo look into windowEnterTransition and xml transition sets...
     boolean ffmpegEnabled = false;
     String[] videoDetails;
     String[] presets;
@@ -281,7 +282,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             getVidDetails.cancel(true);
         }
     }
-
+    //ToDo get rid of this..make an "isFirstStart" pref and only load it once..
     private void initFfmpeg() {
         final FFmpeg ffmpeg = FFmpeg.getInstance(this);
         try {
@@ -345,7 +346,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             initTaskConvert();
         }
     }
-
+    //ToDo load toolbar backdrop with glide?
     private void initVideoDetailView(final String[] videoDetails) {
         Bitmap bitmap = ImageCache.getInstance().getBitmapFromCache(videoDetails[KEY_PATH]);
         ivThumbnail.setAlpha(0f);
@@ -411,13 +412,10 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             }
         });
 
-        heightAnimator.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-            }
-
+        heightAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animator) {
+                super.onAnimationEnd(animator);
                 for(int i = 0; i < taskParent.getChildCount(); i++){
                     View v = taskParent.getChildAt(i);
                     v.animate().alpha(1f).setDuration(500).start();
@@ -428,43 +426,19 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
                             .setInterpolator(new OvershootInterpolator()).start();
                 }
             }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
         });
 
         heightAnimator.start();
     }
 
     private void hideFab(){
-        fab.animate().scaleX(0f).scaleY(0f).setListener(new Animator.AnimatorListener() {
+        fab.animate().scaleX(0f).scaleY(0f).setListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
                 fab.setVisibility(View.GONE);
             }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        });
+        }).start();
     }
 
     private void initTaskScale(){
@@ -542,47 +516,20 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             if (intent.hasExtra(CompressService.CURRENT_PROGRESS)) {
                 if (progressBar.getVisibility() == View.VISIBLE) {
                     progressBar.animate().translationX(progressBar.getMeasuredHeight()).start();
-                    progressBar.animate().alpha(0f).setListener(new Animator.AnimatorListener() {
+                    progressBar.animate().alpha(0f).setListener(new AnimatorListenerAdapter() {
                         @Override
-                        public void onAnimationStart(Animator animator) {
-
+                        public void onAnimationEnd(Animator animation) {
+                            super.onAnimationEnd(animation);
+                            progressBar.setVisibility(View.GONE);
                         }
-
+                    }).start();
+                    tvProgress.animate().translationX(0).setListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animator) {
-                            progressBar.setVisibility(View.INVISIBLE);
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animator) {
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animator) {
-
-                        }
-                    });
-                    tvProgress.animate().translationX(0).setListener(new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationStart(Animator animator) {
-
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animator animator) {
+                            super.onAnimationEnd(animator);
+                            //Todo...delay this to not overwhelm the user with friggin animations
                             if (bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED)
                                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animator) {
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animator) {
-
                         }
                     }).start();
                 }
