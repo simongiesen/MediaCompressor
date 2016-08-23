@@ -7,14 +7,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.CoordinatorLayout;
@@ -47,10 +44,10 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.freddieptf.meh.imagecompressor.services.CameraActionHandlerService;
 import com.freddieptf.meh.imagecompressor.services.CompressService;
 import com.freddieptf.meh.imagecompressor.utils.CompressUtils;
-import com.freddieptf.meh.imagecompressor.utils.ImageCache;
 import com.freddieptf.meh.imagecompressor.utils.MediaUtils;
 import com.freddieptf.meh.imagecompressor.views.EditResolutionView;
 import com.freddieptf.meh.imagecompressor.views.TaskView;
@@ -92,7 +89,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
 
     Spinner spinnerThreads, spinnerPresets, spinnerContainers;
     EditResolutionView resolutionView;
-    ImageView ivThumbnail;
+    ImageView toolBarImageBackDrop;
     TextView tvVideoDuration, tvVideoResolution, tvVideoSize, tvVideoName, tvVideoQuality, tvTaskStatus;
     SeekBar sbVideoQuality;
     RadioGroup radioGroup;
@@ -126,7 +123,7 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
         tvVideoDuration = (TextView) findViewById(R.id.tv_videoDuration);
         tvVideoResolution = (TextView) findViewById(R.id.tv_videoResolution);
         tvVideoSize = (TextView) findViewById(R.id.tv_videoSize);
-        ivThumbnail = (ImageView) findViewById(R.id.iv_thumbnail);
+        toolBarImageBackDrop = (ImageView) findViewById(R.id.iv_thumbnail);
         fab = (FloatingActionButton) findViewById(R.id.fab);
 
         taskViewScale = (TaskView) findViewById(R.id.taskViewScale);
@@ -346,32 +343,9 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             initTaskConvert();
         }
     }
-    //ToDo load toolbar backdrop with glide?
-    private void initVideoDetailView(final String[] videoDetails) {
-        Bitmap bitmap = ImageCache.getInstance().getBitmapFromCache(videoDetails[KEY_PATH]);
-        ivThumbnail.setAlpha(0f);
-        if (bitmap == null) {
-            Thread loadThumbnail = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    final Bitmap toolbarBackDrop = ThumbnailUtils.createVideoThumbnail(videoDetails[KEY_PATH],
-                            MediaStore.Video.Thumbnails.MINI_KIND);
-                    ImageCache.getInstance().addBitmapToCache(videoDetails[KEY_PATH], toolbarBackDrop);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            ivThumbnail.setImageBitmap(toolbarBackDrop);
-                            ivThumbnail.animate().alpha(1f).setDuration(600).start();
-                        }
-                    });
-                }
-            });
-            loadThumbnail.start();
-        } else {
-            ivThumbnail.setImageBitmap(bitmap);
-            ivThumbnail.animate().alpha(1f).setDuration(600).start();
-        }
 
+    private void initVideoDetailView(final String[] videoDetails) {
+        Glide.with(this).load(videoDetails[KEY_PATH]).sizeMultiplier(0.7f).crossFade(1000).into(toolBarImageBackDrop);
         animateToolBar();
         tvVideoName.setText(videoDetails[KEY_TITLE]);
         tvVideoDuration.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(Long.parseLong(videoDetails[KEY_DURATION]))) + "seconds");
@@ -402,13 +376,13 @@ public class VideoActivity extends AppCompatActivity implements TaskView.OnTaskC
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 ViewGroup.LayoutParams toolbarParams = toolbar.getLayoutParams();
-                ViewGroup.LayoutParams thumbnailViewParams = ivThumbnail.getLayoutParams();
+                ViewGroup.LayoutParams thumbnailViewParams = toolBarImageBackDrop.getLayoutParams();
 
                 toolbarParams.height = (int) valueAnimator.getAnimatedValue();
                 thumbnailViewParams.height = (int) valueAnimator.getAnimatedValue();
 
                 toolbar.setLayoutParams(toolbarParams);
-                ivThumbnail.setLayoutParams(thumbnailViewParams);
+                toolBarImageBackDrop.setLayoutParams(thumbnailViewParams);
             }
         });
 
